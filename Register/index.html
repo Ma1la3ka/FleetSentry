@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register — FleetSentry</title>
+  <link rel="stylesheet" href="style.css" />
+ 
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+</head>
+<body class="auth-body">
+<div class="auth-shell">
+
+  <!-- ── LEFT ── -->
+  <div class="auth-panel-left">
+    <div class="left-top">
+      <a href="index.html" class="left-logo">
+        <span class="logo-icon">⬡</span> FleetSentry
+      </a>
+      <div class="panel-copy">
+        <h2>Join Nigeria's smartest fleet platform</h2>
+        <p>Whether you run a logistics company or drive for one — FleetSentry keeps every trip fully accountable.</p>
+      </div>
+    </div>
+    <div class="left-bottom">
+      <div class="panel-checklist">
+        <div class="check-item"><span class="check-dot">✓</span> Real-time route tracking</div>
+        <div class="check-item"><span class="check-dot">✓</span> Fuel theft detection</div>
+        <div class="check-item"><span class="check-dot">✓</span> Trip approval workflows</div>
+        <div class="check-item"><span class="check-dot">✓</span> Automated delivery reports</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT ── -->
+  <div class="auth-panel-right">
+    <div class="auth-form-wrap">
+
+      <div class="auth-brand-mobile">
+        <a href="index.html" class="left-logo" style="color:var(--navy)">
+          <span class="logo-icon" style="color:var(--blue)">⬡</span> FleetSentry
+        </a>
+      </div>
+
+      <div class="auth-page-heading">
+        <h1>Create your account</h1>
+        <p>Get started in under 2 minutes.</p>
+      </div>
+
+      <!-- TABS -->
+      <div class="role-tabs">
+        <button class="role-tab active" id="tabAdmin" onclick="switchRole('admin')">🏢 Register as Admin</button>
+        <button class="role-tab" id="tabWorker" onclick="switchRole('worker')">🚗 Register as Driver</button>
+      </div>
+
+      <!-- ══ ADMIN FORM ══ -->
+      <form class="auth-form" id="adminForm" onsubmit="handleRegister(event,'admin')">
+        <div class="form-title">Company Account</div>
+        <div class="form-sub">You'll manage your entire fleet from the admin dashboard.</div>
+
+        <div class="form-section-label">Personal Info</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="adminFirst">First Name</label>
+            <div class="input-icon-wrap">
+              <span class="input-icon">👤</span>
+              <input type="text" id="adminFirst" placeholder="Chidi" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="adminLast">Last Name</label>
+            <div class="input-icon-wrap">
+              <span class="input-icon">👤</span>
+              <input type="text" id="adminLast" placeholder="Okonkwo" required />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section-label">Company Details</div>
+        <div class="form-group">
+          <label for="adminCompany">Company Name</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">🏢</span>
+            <input type="text" id="adminCompany" placeholder="Swift Logistics Ltd" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="adminFleet">Fleet Size</label>
+            <select id="adminFleet" required>
+              <option value="" disabled selected>Select size</option>
+              <option>1 – 5 vehicles</option>
+              <option>6 – 20 vehicles</option>
+              <option>21 – 50 vehicles</option>
+              <option>50+ vehicles</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="adminFuel">Fuel Price (₦/litre)</label>
+            <div class="input-icon-wrap">
+              <span class="input-icon">⛽</span>
+              <input type="number" id="adminFuel" placeholder="e.g. 950" min="1" required />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section-label">Contact & Login</div>
+        <div class="form-group">
+          <label for="adminEmail">Work Email</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">✉️</span>
+            <input type="email" id="adminEmail" placeholder="chidi@swiftlogistics.ng" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="adminPhone">Phone Number</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">📞</span>
+            <input type="tel" id="adminPhone" placeholder="+234 801 234 5678" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="adminPass">Password</label>
+          <div class="pass-wrap">
+            <input type="password" id="adminPass" placeholder="Min. 8 characters" minlength="8" required oninput="checkStrength(this,'adminStrength','adminStrengthLabel')" />
+            <button type="button" class="eye-btn" onclick="togglePass('adminPass',this)">👁</button>
+          </div>
+          <div class="strength-bar" id="adminStrength">
+            <div class="strength-seg"></div>
+            <div class="strength-seg"></div>
+            <div class="strength-seg"></div>
+            <div class="strength-seg"></div>
+          </div>
+          <div class="strength-label" id="adminStrengthLabel"></div>
+        </div>
+        <div class="form-group">
+          <label for="adminPass2">Confirm Password</label>
+          <div class="pass-wrap">
+            <input type="password" id="adminPass2" placeholder="Repeat your password" required />
+            <button type="button" class="eye-btn" onclick="togglePass('adminPass2',this)">👁</button>
+          </div>
+        </div>
+
+        <div class="form-check">
+          <input type="checkbox" id="adminTerms" required />
+          <label for="adminTerms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+        </div>
+
+        <div id="adminError" class="form-error" style="display:none"></div>
+        <button type="submit" class="btn-submit" id="adminSubmit">
+          <span class="btn-text">Create Admin Account →</span>
+          <span class="btn-spinner">⏳ Creating…</span>
+        </button>
+      </form>
+
+      <!-- ══ WORKER FORM ══ -->
+      <form class="auth-form" id="workerForm" style="display:none" onsubmit="handleRegister(event,'worker')">
+        <div class="form-title">Driver Account</div>
+        <div class="form-sub">Register and link to your company to start receiving trip assignments.</div>
+
+        <div class="form-section-label">Personal Info</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="workerFirst">First Name</label>
+            <div class="input-icon-wrap">
+              <span class="input-icon">👤</span>
+              <input type="text" id="workerFirst" placeholder="Emeka" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="workerLast">Last Name</label>
+            <div class="input-icon-wrap">
+              <span class="input-icon">👤</span>
+              <input type="text" id="workerLast" placeholder="Eze" required />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section-label">Company & Vehicle</div>
+        <div class="form-group">
+          <label for="workerCompany">Select Your Company</label>
+          <select id="workerCompany" required>
+            <option value="" disabled selected>Loading companies…</option>
+          </select>
+          <span class="field-note">Your company must already be registered on FleetSentry.</span>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="workerVehicle">Vehicle Type</label>
+            <select id="workerVehicle" required>
+              <option value="" disabled selected>Select vehicle</option>
+              <optgroup label="Motorcycles">
+                <option>Motorcycle (Okada)</option>
+                <option>Cargo Motorcycle</option>
+              </optgroup>
+              <optgroup label="Tricycles">
+                <option>Tricycle (Keke NAPEP)</option>
+                <option>Cargo Tricycle</option>
+              </optgroup>
+              <optgroup label="Vans & Trucks">
+                <option>Mini Van</option>
+                <option>Pickup Truck</option>
+                <option>Box Truck</option>
+                <option>Articulated Truck</option>
+              </optgroup>
+              <optgroup label="Cars">
+                <option>Saloon Car</option>
+                <option>SUV</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="workerPlate">Plate Number</label>
+            <div class="input-icon-wrap">
+              <span class="input-icon">🪪</span>
+              <input type="text" id="workerPlate" placeholder="LAG-XXX-YY" required />
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="workerLicense">Driver's Licence No.</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">📄</span>
+            <input type="text" id="workerLicense" placeholder="LAG2024XXXXXX" required />
+          </div>
+        </div>
+
+        <div class="form-section-label">Contact & Login</div>
+        <div class="form-group">
+          <label for="workerEmail">Email Address</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">✉️</span>
+            <input type="email" id="workerEmail" placeholder="emeka@example.com" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="workerPhone">Phone Number</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">📞</span>
+            <input type="tel" id="workerPhone" placeholder="+234 701 234 5678" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="workerPass">Password</label>
+          <div class="pass-wrap">
+            <input type="password" id="workerPass" placeholder="Min. 8 characters" minlength="8" required oninput="checkStrength(this,'workerStrength','workerStrengthLabel')" />
+            <button type="button" class="eye-btn" onclick="togglePass('workerPass',this)">👁</button>
+          </div>
+          <div class="strength-bar" id="workerStrength">
+            <div class="strength-seg"></div>
+            <div class="strength-seg"></div>
+            <div class="strength-seg"></div>
+            <div class="strength-seg"></div>
+          </div>
+          <div class="strength-label" id="workerStrengthLabel"></div>
+        </div>
+        <div class="form-group">
+          <label for="workerPass2">Confirm Password</label>
+          <div class="pass-wrap">
+            <input type="password" id="workerPass2" placeholder="Repeat your password" required />
+            <button type="button" class="eye-btn" onclick="togglePass('workerPass2',this)">👁</button>
+          </div>
+        </div>
+
+        <div class="form-check">
+          <input type="checkbox" id="workerTerms" required />
+          <label for="workerTerms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+        </div>
+
+        <div id="workerError" class="form-error" style="display:none"></div>
+        <button type="submit" class="btn-submit" id="workerSubmit">
+          <span class="btn-text">Create Driver Account →</span>
+          <span class="btn-spinner">⏳ Creating…</span>
+        </button>
+      </form>
+
+      <p class="auth-switch">
+        Already have an account? <a href="/Login/index.html">Log in here</a>
+      </p>
+    </div>
+  </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>

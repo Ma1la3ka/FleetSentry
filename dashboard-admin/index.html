@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FleetSentry — Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <span class="brand-name">FleetSentry</span>
+    </div>
+
+    <div class="sidebar-section-label">Overview</div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-section="overview">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="#" class="nav-item" data-section="drivers">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Drivers
+        <span class="nav-badge" id="sidebarDriverCount">0</span>
+      </a>
+      <a href="#" class="nav-item" data-section="trips">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Trip Requests
+        <span class="nav-badge pending" id="sidebarPendingCount">0</span>
+      </a>
+      <a href="#" class="nav-item" data-section="map">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        Live Map
+      </a>
+      <a href="#" class="nav-item" data-section="fuel">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V8l9-6 9 6v14"/><path d="M9 22V12h6v10"/></svg>
+        Fuel Reports
+      </a>
+    </nav>
+
+    <div class="sidebar-section-label">System</div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item" data-section="alerts">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Alerts
+        <span class="nav-badge danger" id="sidebarAlertCount">0</span>
+      </a>
+      <a href="#" class="nav-item" id="logoutBtn">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
+      </a>
+    </nav>
+
+    <div class="sidebar-profile">
+      <div class="profile-avatar" id="sidebarAvatar">A</div>
+      <div class="profile-info">
+        <div class="profile-name" id="sidebarName">Admin</div>
+        <div class="profile-role">Fleet Manager</div>
+      </div>
+      <div class="profile-dot"></div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="main" id="main">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle" id="menuToggle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="topbar-greeting">
+          <span class="greeting-text">Good <span id="greetingTime">morning</span>,</span>
+          <span class="greeting-name" id="topbarName">Admin</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-company" id="topbarCompany">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <span id="companyNameDisplay">Company</span>
+        </div>
+        <div class="topbar-clock" id="topbarClock">--:--</div>
+        <button class="notif-btn" id="notifBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-dot" id="notifDot"></span>
+        </button>
+        <div class="topbar-avatar" id="topbarAvatar">A</div>
+      </div>
+    </header>
+
+    <!-- NOTIFICATION DRAWER -->
+    <div class="notif-drawer" id="notifDrawer">
+      <div class="notif-drawer-header">
+        <span>Notifications</span>
+        <button class="notif-clear" id="clearNotifs">Clear all</button>
+      </div>
+      <div class="notif-list" id="notifList">
+        <div class="notif-empty">No new notifications</div>
+      </div>
+    </div>
+
+    <!-- PAGE CONTENT -->
+    <div class="page-content">
+
+      <!-- ── SECTION: OVERVIEW ── -->
+      <section class="section active" id="section-overview">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Dashboard Overview</h1>
+            <p class="section-sub" id="overviewSub">Loading your fleet data…</p>
+          </div>
+          <div class="section-actions">
+            <button class="btn-refresh" id="refreshBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- STATS ROW -->
+        <div class="stats-grid">
+          <div class="stat-card" data-delay="0">
+            <div class="stat-icon blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="stat-body">
+              <div class="stat-value" id="statDrivers">0</div>
+              <div class="stat-label">Total Drivers</div>
+            </div>
+            <div class="stat-trend up" id="trendDrivers">+0 this week</div>
+          </div>
+          <div class="stat-card" data-delay="1">
+            <div class="stat-icon green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="stat-body">
+              <div class="stat-value" id="statActive">0</div>
+              <div class="stat-label">Active Trips</div>
+            </div>
+            <div class="stat-trend neutral" id="trendActive">Live now</div>
+          </div>
+          <div class="stat-card" data-delay="2">
+            <div class="stat-icon amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="stat-body">
+              <div class="stat-value" id="statPending">0</div>
+              <div class="stat-label">Pending Requests</div>
+            </div>
+            <div class="stat-trend warn" id="trendPending">Needs approval</div>
+          </div>
+          <div class="stat-card" data-delay="3">
+            <div class="stat-icon navy">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="stat-body">
+              <div class="stat-value" id="statFuel">₦0</div>
+              <div class="stat-label">Monthly Fuel Cost</div>
+            </div>
+            <div class="stat-trend neutral" id="trendFuel">This month</div>
+          </div>
+        </div>
+
+        <!-- LOWER GRID: Trips + Alerts -->
+        <div class="lower-grid">
+
+          <!-- PENDING TRIP REQUESTS -->
+          <div class="card trip-requests-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2 class="card-title">Trip Requests</h2>
+                <span class="card-badge" id="pendingBadge">0 pending</span>
+              </div>
+              <button class="card-link" data-section="trips">View all</button>
+            </div>
+            <div class="trip-list" id="tripRequestsList">
+              <div class="empty-state">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <p>No pending trip requests</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ALERTS -->
+          <div class="card alerts-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2 class="card-title">Live Alerts</h2>
+                <span class="card-badge danger" id="alertBadge">0 active</span>
+              </div>
+              <button class="card-link" data-section="alerts">View all</button>
+            </div>
+            <div class="alert-list" id="alertsList">
+              <div class="empty-state">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <p>No active alerts</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ── SECTION: DRIVERS ── -->
+      <section class="section" id="section-drivers">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Drivers</h1>
+            <p class="section-sub">All registered drivers in your fleet</p>
+          </div>
+          <div class="section-actions">
+            <div class="search-box">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="driverSearch" placeholder="Search drivers…" />
+            </div>
+          </div>
+        </div>
+        <div class="card table-card">
+          <table class="data-table" id="driversTable">
+            <thead>
+              <tr>
+                <th>Driver</th>
+                <th>Vehicle</th>
+                <th>Plate No.</th>
+                <th>Status</th>
+                <th>Total Trips</th>
+                <th>Last Active</th>
+              </tr>
+            </thead>
+            <tbody id="driversTableBody">
+              <tr><td colspan="6" class="table-empty">Loading drivers…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── SECTION: TRIP REQUESTS ── -->
+      <section class="section" id="section-trips">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Trip Requests</h1>
+            <p class="section-sub">Approve or reject driver trip requests</p>
+          </div>
+          <div class="section-actions">
+            <select class="filter-select" id="tripFilter">
+              <option value="all">All requests</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
+        <div class="card table-card">
+          <table class="data-table" id="tripsTable">
+            <thead>
+              <tr>
+                <th>Driver</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Vehicle</th>
+                <th>Requested</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="tripsTableBody">
+              <tr><td colspan="7" class="table-empty">Loading trip requests…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ── SECTION: MAP ── -->
+      <section class="section" id="section-map">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Live Map</h1>
+            <p class="section-sub">Real-time driver positions and routes</p>
+          </div>
+          <div class="section-actions">
+            <div class="map-legend">
+              <span class="legend-dot active"></span>Active
+              <span class="legend-dot idle"></span>Idle
+              <span class="legend-dot alert"></span>Alert
+            </div>
+          </div>
+        </div>
+        <div class="card map-card">
+          <div id="liveMap"></div>
+          <div class="map-sidebar">
+            <div class="map-sidebar-title">Active Drivers</div>
+            <div id="mapDriverList" class="map-driver-list">
+              <div class="empty-state small">No active drivers</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SECTION: FUEL ── -->
+      <section class="section" id="section-fuel">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Fuel Reports</h1>
+            <p class="section-sub">Cost analysis and consumption breakdown</p>
+          </div>
+          <div class="section-actions">
+            <select class="filter-select" id="fuelPeriod">
+              <option value="month">This month</option>
+              <option value="week">This week</option>
+              <option value="all">All time</option>
+            </select>
+          </div>
+        </div>
+        <div class="fuel-grid">
+          <div class="card fuel-summary-card">
+            <div class="fuel-stat-row">
+              <div class="fuel-stat">
+                <div class="fuel-stat-value" id="fuelTotalCost">₦0</div>
+                <div class="fuel-stat-label">Total Fuel Cost</div>
+              </div>
+              <div class="fuel-stat">
+                <div class="fuel-stat-value" id="fuelTotalKm">0 km</div>
+                <div class="fuel-stat-label">Total Distance</div>
+              </div>
+              <div class="fuel-stat">
+                <div class="fuel-stat-value" id="fuelPricePerL">₦0/L</div>
+                <div class="fuel-stat-label">Fuel Price / Litre</div>
+              </div>
+            </div>
+          </div>
+          <div class="card table-card">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Driver</th>
+                  <th>Trip</th>
+                  <th>Distance</th>
+                  <th>Litres Used</th>
+                  <th>Cost (₦)</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="fuelTableBody">
+                <tr><td colspan="6" class="table-empty">No fuel data yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SECTION: ALERTS ── -->
+      <section class="section" id="section-alerts">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Alerts</h1>
+            <p class="section-sub">Off-route deviations, idle time, and system alerts</p>
+          </div>
+          <div class="section-actions">
+            <button class="btn-refresh" id="clearAlertsBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              Clear all
+            </button>
+          </div>
+        </div>
+        <div class="alerts-full-list" id="alertsFullList">
+          <div class="empty-state large">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.25"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <p>No alerts at the moment</p>
+            <span>Your fleet is operating normally</span>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /page-content -->
+  </main>
+
+  <!-- ── TRIP APPROVAL MODAL ── -->
+  <div class="modal-overlay" id="tripModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Trip Request</h3>
+        <button class="modal-close" id="closeModal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-detail-row">
+          <span class="modal-label">Driver</span>
+          <span class="modal-value" id="modalDriver">—</span>
+        </div>
+        <div class="modal-detail-row">
+          <span class="modal-label">Vehicle</span>
+          <span class="modal-value" id="modalVehicle">—</span>
+        </div>
+        <div class="modal-detail-row">
+          <span class="modal-label">From</span>
+          <span class="modal-value" id="modalFrom">—</span>
+        </div>
+        <div class="modal-detail-row">
+          <span class="modal-label">To</span>
+          <span class="modal-value" id="modalTo">—</span>
+        </div>
+        <div class="modal-detail-row">
+          <span class="modal-label">Est. Distance</span>
+          <span class="modal-value" id="modalDistance">—</span>
+        </div>
+        <div class="modal-detail-row">
+          <span class="modal-label">Est. Fuel Cost</span>
+          <span class="modal-value" id="modalFuelCost">—</span>
+        </div>
+        <div class="modal-map" id="modalMap"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-reject" id="rejectTripBtn">Reject</button>
+        <button class="btn btn-approve" id="approveTripBtn">Approve Trip</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

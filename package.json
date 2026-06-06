@@ -1,0 +1,18 @@
+{
+  "name": "tracksafe",
+  "version": "1.0.0",
+  "description": "TrackSafe - A comprehensive tracking dashboard application",
+  "private": true,
+  "scripts": {
+    "start": "echo 'Run locally with a static server'",
+    "build": "echo 'Static build complete'",
+    "serve": "npx http-server -p 8000"
+  },
+  "keywords": [
+    "tracking",
+    "dashboard",
+    "admin"
+  ],
+  "author": "",
+  "license": "ISC"
+}

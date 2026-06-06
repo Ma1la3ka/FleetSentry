@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log In — FleetSentry</title>
+  <link rel="stylesheet" href="/Register/style.css" />
+ 
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+</head>
+<body class="auth-body">
+<div class="auth-shell">
+
+  <!-- ── LEFT ── -->
+  <div class="auth-panel-left">
+    <div class="left-top">
+      <a href="index.html" class="left-logo">
+        <span class="logo-icon">⬡</span> FleetSentry
+      </a>
+      <div class="panel-copy">
+        <h2>Welcome back to your fleet dashboard</h2>
+        <p>Every trip, every driver, every kilometre — fully visible and accountable.</p>
+      </div>
+    </div>
+    <div class="left-bottom">
+      <div class="panel-checklist">
+        <div class="check-item"><span class="check-dot">✓</span> Live trip monitoring</div>
+        <div class="check-item"><span class="check-dot">✓</span> Instant delivery alerts</div>
+        <div class="check-item"><span class="check-dot">✓</span> Fuel cost tracking</div>
+        <div class="check-item"><span class="check-dot">✓</span> Route compliance reports</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT ── -->
+  <div class="auth-panel-right">
+    <div class="auth-form-wrap">
+
+      <div class="auth-brand-mobile">
+        <a href="index.html" class="left-logo" style="color:var(--navy)">
+          <span class="logo-icon" style="color:var(--blue)">⬡</span> FleetSentry
+        </a>
+      </div>
+
+      <div class="auth-page-heading">
+        <h1>Sign in</h1>
+        <p>Choose your role and enter your credentials below.</p>
+      </div>
+
+      <!-- TABS -->
+      <div class="role-tabs">
+        <button class="role-tab active" id="tabAdmin" onclick="switchLoginRole('admin')">🏢 Admin Login</button>
+        <button class="role-tab" id="tabWorker" onclick="switchLoginRole('worker')">🚗 Driver Login</button>
+      </div>
+
+      <form class="auth-form" id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-title" id="loginTitle">Admin Sign In</div>
+        <div class="form-sub" id="loginSub">Access your fleet management dashboard.</div>
+
+        <!-- company dropdown — shown only for workers -->
+        <div class="form-group" id="companyGroup" style="display:none">
+          <label for="loginCompany">Your Company</label>
+          <select id="loginCompany">
+            <option value="" disabled selected>Loading companies…</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="loginEmail">Email Address</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">✉️</span>
+            <input type="email" id="loginEmail" placeholder="you@company.ng" required autocomplete="email" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="loginPass">Password</label>
+          <div class="pass-wrap">
+            <input type="password" id="loginPass" placeholder="Your password" required autocomplete="current-password" />
+            <button type="button" class="eye-btn" onclick="togglePass('loginPass',this)">👁</button>
+          </div>
+        </div>
+
+        <div class="form-row-between">
+          <div class="form-check" style="margin-bottom:0">
+            <input type="checkbox" id="rememberMe" />
+            <label for="rememberMe">Remember me</label>
+          </div>
+          <a href="#" class="link-sm">Forgot password?</a>
+        </div>
+
+        <div id="loginError" class="form-error" style="display:none"></div>
+
+        <button type="submit" class="btn-submit" id="loginSubmit">
+          <span class="btn-text">Sign In →</span>
+          <span class="btn-spinner">⏳ Signing in…</span>
+        </button>
+      </form>
+
+      <p class="auth-switch">
+        Don't have an account?<br/>
+        <a href="/Register/index.html?role=admin">Register as Admin</a> &nbsp;·&nbsp;
+        <a href="/Register/index.html?role=worker">Register as Driver</a>
+      </p>
+    </div>
+  </div>
+</div>
+<script src="/Register/script.js"></script>
+</body>
+</html>
