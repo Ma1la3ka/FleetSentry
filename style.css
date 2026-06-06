@@ -491,3 +491,70 @@ h1, h2, h3, h4 { font-family: 'Syne', sans-serif; line-height: 1.15; }
   padding: 20px 0;
   font-size: 0.78rem;
 }
+/* ── MOBILE FIXES ── */
+@media (max-width: 480px) {
+  /* Nav */
+  .nav-inner { padding: 0 16px; height: 56px; }
+  .nav-logo { font-size: 1.05rem; }
+
+  /* Hero */
+  .hero {
+    padding: 80px 16px 60px;
+    gap: 32px;
+  }
+  .hero-headline { font-size: 2rem; }
+  .hero-sub { font-size: 0.92rem; margin-bottom: 24px; }
+  .hero-badge { font-size: 0.75rem; padding: 5px 12px; }
+  .hero-actions { flex-direction: column; gap: 10px; }
+  .hero-actions a { width: 100%; text-align: center; }
+  .btn-lg { padding: 13px 20px; font-size: 0.92rem; }
+
+  /* Stats */
+  .hero-stats { gap: 16px; flex-wrap: wrap; }
+  .stat-num { font-size: 1.1rem; }
+  .stat-label { font-size: 0.7rem; }
+
+  /* Notification card */
+  .notif-card {
+    position: relative;
+    left: 0; bottom: 0;
+    width: 100%;
+    margin-top: 16px;
+  }
+  .notif-title { font-size: 0.78rem; }
+  .notif-sub { font-size: 0.68rem; }
+
+  /* Sections */
+  .section-inner { padding: 0 16px; }
+  .section-title { font-size: 1.5rem; margin-bottom: 28px; }
+  .features { padding: 60px 0; }
+  .how { padding: 60px 0; }
+  .roles { padding: 60px 0; }
+
+  /* Features */
+  .feat-card { padding: 20px; }
+  .feat-card h3 { font-size: 0.95rem; }
+
+  /* Steps */
+  .step { padding: 20px 18px; min-width: unset; width: 100%; }
+
+  /* Roles */
+  .role-card { padding: 24px 20px; }
+  .role-card h3 { font-size: 1.05rem; }
+  .role-card li { font-size: 0.82rem; }
+
+  /* CTA */
+  .cta-section { padding: 60px 16px; }
+  .cta-inner h2 { font-size: 1.7rem; }
+  .cta-btns { flex-direction: column; align-items: center; }
+  .cta-btns a { width: 100%; text-align: center; }
+
+  /* Footer */
+  .footer { padding: 40px 16px 0; }
+  .footer-inner { gap: 32px; }
+  .footer-links { gap: 24px; }
+
+  /* Mobile menu */
+  .mobile-menu { padding: 10px 16px 16px; }
+  .mobile-menu a { font-size: 0.92rem; padding: 9px 0; }
+}

@@ -434,3 +434,77 @@ body.auth-body {
   font-size: 0.72rem; color: var(--muted);
   margin-top: 4px; text-align: right;
 }
+/* ── MOBILE FIXES ── */
+@media (max-width: 480px) {
+  .auth-panel-right {
+    padding: 28px 16px 60px;
+    align-items: flex-start;
+  }
+
+  .auth-brand-mobile {
+    margin-bottom: 20px;
+  }
+  .auth-brand-mobile a {
+    font-size: 1.05rem;
+  }
+
+  .auth-page-heading {
+    margin-bottom: 20px;
+  }
+  .auth-page-heading h1 {
+    font-size: 1.5rem;
+  }
+  .auth-page-heading p {
+    font-size: 0.82rem;
+  }
+
+  /* Role tabs */
+  .role-tabs { margin-bottom: 20px; }
+  .role-tab {
+    font-size: 0.78rem;
+    padding: 9px 8px;
+    gap: 4px;
+  }
+
+  /* Form card */
+  .auth-form {
+    padding: 22px 16px;
+    border-radius: 14px;
+  }
+
+  .form-title { font-size: 1.05rem; }
+  .form-sub { font-size: 0.78rem; margin-bottom: 20px; padding-bottom: 18px; }
+
+  /* Inputs */
+  .form-group { margin-bottom: 12px; }
+  .form-group label { font-size: 0.76rem; }
+  .form-group input,
+  .form-group select {
+    font-size: 0.88rem;
+    padding: 10px 12px;
+  }
+  .input-icon-wrap input { padding-left: 34px; }
+
+  /* Row → stack on mobile */
+  .form-row { grid-template-columns: 1fr; gap: 0; }
+
+  /* Remember me row */
+  .form-row-between {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  /* Submit button */
+  .btn-submit {
+    font-size: 0.9rem;
+    padding: 13px;
+  }
+
+  /* Bottom switch */
+  .auth-switch {
+    font-size: 0.8rem;
+    margin-top: 18px;
+  }
+}
