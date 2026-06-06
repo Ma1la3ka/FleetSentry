@@ -136,11 +136,24 @@ function setupNavigation() {
 
   document.getElementById('ctNewTripBtn')?.addEventListener('click', () => navigateTo('request'));
 
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    if (watchId) navigator.geolocation.clearWatch(watchId);
-    localStorage.clear();
-    window.location.href = '../Login/index.html';
-  });
+ document.getElementById('logoutBtn').addEventListener('click', () => {
+    Swal.fire({
+        title: 'Logout?',
+        text: 'Are you sure you want to logout?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, logout',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            localStorage.clear();
+            window.location.href = '../Login/index.html';
+        }
+    });
+});
 }
 
 function navigateTo(sectionId) {

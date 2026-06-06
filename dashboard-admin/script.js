@@ -96,9 +96,22 @@ function setupNavigation() {
   });
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.clear();
-    window.location.href = '/Login/index.html';
-  });
+    Swal.fire({
+        title: 'Logout?',
+        text: 'Are you sure you want to logout?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, logout',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            localStorage.clear();
+            window.location.href = '/Login/index.html';
+        }
+    });
+});
 
   document.getElementById('refreshBtn').addEventListener('click', loadDashboardData);
 }
