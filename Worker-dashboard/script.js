@@ -8,17 +8,33 @@ function getToken() {
 // ─────────────────────────────
 // STATE
 // ─────────────────────────────
-let currentUser   = null;
-let tripMap       = null;
-let startMarker   = null;
-let endMarker     = null;
-let startLatLng   = null;
-let endLatLng     = null;
-let mapStep       = 1;
-let allTrips      = [];
-let allNotifs     = [];
-let activeTrip    = null;
-let watchId       = null; // geolocation watcher
+let currentUser            = null;
+let tripMap                = null;
+let startMarker            = null;
+let endMarker              = null;
+let startLatLng            = null;
+let endLatLng              = null;
+let mapStep                = 1;
+let allTrips               = [];
+let allNotifs              = [];
+let activeTrip             = null;
+let watchId                = null;
+let dashboardRefreshInterval = null;
+let activeTripInterval     = null;
+
+// ─────────────────────────────
+// BFCACHE AUTH CHECK
+// Prevents forward-navigation restoring dashboard after logout
+// ─────────────────────────────
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) {
+    const user = localStorage.getItem('fs_user');
+    const role = localStorage.getItem('fs_role');
+    if (!user || role !== 'worker') {
+      window.location.replace('../Login/index.html');
+    }
+  }
+});
 
 // ─────────────────────────────
 // INIT
@@ -35,7 +51,7 @@ function loadUserFromStorage() {
   const role   = localStorage.getItem('fs_role');
 
   if (!stored || role !== 'worker') {
-    window.location.href = '../Login/index.html';
+    window.location.replace('../Login/index.html');
     return;
   }
 
@@ -62,7 +78,7 @@ function showPendingScreen() {
 
   document.getElementById('pendingLogout').addEventListener('click', () => {
     localStorage.clear();
-    window.location.href = '../Login/index.html';
+    window.location.replace('../Login/index.html');
   });
 }
 
@@ -78,6 +94,11 @@ function showDashboard() {
   setupNavigation();
   setupMobileMenu();
   loadData();
+
+  // Auto-refresh every 30 seconds
+  dashboardRefreshInterval = setInterval(() => {
+    loadData();
+  }, 30000);
 }
 
 function populateUserUI() {
@@ -86,14 +107,14 @@ function populateUserUI() {
   const vehicleType = currentUser.vehicleType || '—';
   const plateNo     = currentUser.plateNo     || '—';
 
-  document.getElementById('sidebarName').textContent       = fullName;
-  document.getElementById('sidebarAvatar').textContent     = initials;
-  document.getElementById('sidebarVehicle').textContent    = `${vehicleType} · ${plateNo}`;
-  document.getElementById('topbarName').textContent        = currentUser.firstName;
-  document.getElementById('topbarAvatar').textContent      = initials;
+  document.getElementById('sidebarName').textContent        = fullName;
+  document.getElementById('sidebarAvatar').textContent      = initials;
+  document.getElementById('sidebarVehicle').textContent     = `${vehicleType} · ${plateNo}`;
+  document.getElementById('topbarName').textContent         = currentUser.firstName;
+  document.getElementById('topbarAvatar').textContent       = initials;
   document.getElementById('companyNameDisplay').textContent = currentUser.companyName || '—';
-  document.getElementById('plateDisplay').textContent      = plateNo;
-  document.getElementById('tripVehicle').value             = `${vehicleType} — ${plateNo}`;
+  document.getElementById('plateDisplay').textContent       = plateNo;
+  document.getElementById('tripVehicle').value              = `${vehicleType} — ${plateNo}`;
 
   const sub = document.getElementById('overviewSub');
   if (sub) sub.textContent = `${currentUser.companyName || ''} · ${vehicleType}`;
@@ -136,24 +157,27 @@ function setupNavigation() {
 
   document.getElementById('ctNewTripBtn')?.addEventListener('click', () => navigateTo('request'));
 
- document.getElementById('logoutBtn').addEventListener('click', () => {
+  document.getElementById('logoutBtn').addEventListener('click', () => {
     Swal.fire({
-        title: 'Logout?',
-        text: 'Are you sure you want to logout?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, logout',
-        cancelButtonText: 'Cancel',
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#6b7280',
+      title: 'Logout?',
+      text: 'Are you sure you want to logout?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, logout',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
     }).then((result) => {
-        if (result.isConfirmed) {
-            if (watchId) navigator.geolocation.clearWatch(watchId);
-            localStorage.clear();
-            window.location.href = '../Login/index.html';
-        }
+      if (result.isConfirmed) {
+        // Stop all intervals and watchers before clearing
+        if (watchId) navigator.geolocation.clearWatch(watchId);
+        if (dashboardRefreshInterval) clearInterval(dashboardRefreshInterval);
+        if (activeTripInterval) clearInterval(activeTripInterval);
+        localStorage.clear();
+        window.location.replace('../Login/index.html');
+      }
     });
-});
+  });
 }
 
 function navigateTo(sectionId) {
@@ -209,8 +233,33 @@ async function loadData() {
     renderNotifsSection();
     updateSidebarBadges();
 
+    // Start or stop fast polling based on trip status
+    if (activeTrip && activeTrip.status === 'started') {
+      startActiveTripPolling();
+    } else {
+      stopActiveTripPolling();
+    }
+
   } catch (err) {
     console.error('Worker dashboard load error:', err);
+  }
+}
+
+// ─────────────────────────────
+// ACTIVE TRIP FAST POLLING
+// Polls every 10s when a trip is in progress so status updates appear quickly
+// ─────────────────────────────
+function startActiveTripPolling() {
+  if (activeTripInterval) return; // already running
+  activeTripInterval = setInterval(() => {
+    loadData();
+  }, 10000);
+}
+
+function stopActiveTripPolling() {
+  if (activeTripInterval) {
+    clearInterval(activeTripInterval);
+    activeTripInterval = null;
   }
 }
 
@@ -218,11 +267,11 @@ async function loadData() {
 // CURRENT TRIP CARD
 // ─────────────────────────────
 function renderCurrentTrip(trip) {
-  const statusText  = document.getElementById('ctStatusText');
-  const dot         = document.getElementById('ctDot');
-  const route       = document.getElementById('ctRoute');
-  const ctFrom      = document.getElementById('ctFrom');
-  const ctTo        = document.getElementById('ctTo');
+  const statusText   = document.getElementById('ctStatusText');
+  const dot          = document.getElementById('ctDot');
+  const route        = document.getElementById('ctRoute');
+  const ctFrom       = document.getElementById('ctFrom');
+  const ctTo         = document.getElementById('ctTo');
   const ctActionArea = document.getElementById('ctActionArea');
 
   if (!trip) {
@@ -261,7 +310,7 @@ function renderCurrentTrip(trip) {
     statusText.textContent = 'Journey in progress';
     dot.className          = 'ct-dot active';
     ctActionArea.innerHTML = `
-      <button class="btn-new-trip" id="completeJourneyBtn" 
+      <button class="btn-new-trip" id="completeJourneyBtn"
         style="background:#2563eb;opacity:0.4;cursor:not-allowed;" disabled>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         Complete Journey
@@ -271,7 +320,7 @@ function renderCurrentTrip(trip) {
       </div>`;
 
     startLocationTracking(trip);
-}
+  }
 }
 
 // ─────────────────────────────
@@ -292,13 +341,12 @@ async function startJourney(trip) {
       const currentLat = position.coords.latitude;
       const currentLng = position.coords.longitude;
 
-      // Check if worker is within 500m of the start point
       if (trip.start_lat && trip.start_lng) {
         const distToStart = haversineKm(
           currentLat, currentLng,
           parseFloat(trip.start_lat),
           parseFloat(trip.start_lng)
-        ) * 1000; // convert to metres
+        ) * 1000;
 
         if (distToStart > 500) {
           const distText = distToStart > 1000
@@ -314,7 +362,6 @@ async function startJourney(trip) {
         }
       }
 
-      // Within range — start the trip
       if (btn) { btn.textContent = 'Starting…'; }
 
       try {
@@ -333,6 +380,7 @@ async function startJourney(trip) {
         activeTrip = { ...trip, status: 'started' };
         renderCurrentTrip(activeTrip);
         startLocationTracking(activeTrip);
+        startActiveTripPolling();
 
       } catch (err) {
         alert(`Could not start journey: ${err.message}`);
@@ -346,6 +394,7 @@ async function startJourney(trip) {
     { enableHighAccuracy: true, timeout: 10000 }
   );
 }
+
 // ─────────────────────────────
 // LOCATION TRACKING (during journey)
 // ─────────────────────────────
@@ -358,17 +407,15 @@ function startLocationTracking(trip) {
       const currentLat = position.coords.latitude;
       const currentLng = position.coords.longitude;
 
-      // ── Check proximity to destination ──
-      const btn         = document.getElementById('completeJourneyBtn');
-      const hint        = document.getElementById('distanceHint');
-      const endLat      = parseFloat(trip.endLat || trip.end_lat);
-      const endLng      = parseFloat(trip.endLng || trip.end_lng);
+      const btn    = document.getElementById('completeJourneyBtn');
+      const hint   = document.getElementById('distanceHint');
+      const endLat = parseFloat(trip.endLat || trip.end_lat);
+      const endLng = parseFloat(trip.endLng || trip.end_lng);
 
       if (btn && !isNaN(endLat) && !isNaN(endLng)) {
         const distM = haversineKm(currentLat, currentLng, endLat, endLng) * 1000;
 
         if (distM <= 500) {
-          // Within range — enable button
           btn.disabled       = false;
           btn.style.opacity  = '1';
           btn.style.cursor   = 'pointer';
@@ -376,7 +423,6 @@ function startLocationTracking(trip) {
           if (hint) hint.style.color = '#10b981';
           btn.onclick = () => completeJourney(trip, currentLat, currentLng);
         } else {
-          // Too far — keep disabled
           btn.disabled       = true;
           btn.style.opacity  = '0.4';
           btn.style.cursor   = 'not-allowed';
@@ -397,7 +443,7 @@ function startLocationTracking(trip) {
           body: JSON.stringify({ currentLat, currentLng })
         });
       } catch (e) {
-        // Silent fail
+        // Silent fail — location update is best-effort
       }
     },
     (err) => console.warn('Location watch error:', err),
@@ -428,8 +474,8 @@ async function completeJourney(trip, currentLat = null, currentLng = null) {
 
   if (watchId) { navigator.geolocation.clearWatch(watchId); watchId = null; }
   arrivalPromptShown = false;
+  stopActiveTripPolling();
 
-  // Get current position if not passed in
   const doComplete = async (lat, lng) => {
     try {
       const token = getToken();
@@ -467,7 +513,7 @@ async function completeJourney(trip, currentLat = null, currentLng = null) {
 // STATS
 // ─────────────────────────────
 function renderStats(stats) {
-  animateNumber('statTotal',     stats.totalTrips     || 0);
+  animateNumber('statTotal',     stats.totalTrips      || 0);
   animateNumber('statPending',   stats.pendingRequests || 0);
   animateNumber('statCompleted', stats.completedTrips  || 0);
   const km = stats.totalKm || 0;
@@ -596,6 +642,17 @@ function renderNotifsSection() {
         <p>No notifications yet</p>
         <span>You'll see updates from your fleet manager here</span>
       </div>`;
+
+    const clearBtn = document.getElementById('clearNotifsBtn');
+    if (clearBtn) {
+      clearBtn.replaceWith(clearBtn.cloneNode(true));
+      document.getElementById('clearNotifsBtn').addEventListener('click', () => {
+        allNotifs = [];
+        renderNotifsSection();
+        renderRecentNotifs();
+        updateSidebarBadges();
+      });
+    }
     return;
   }
 
@@ -616,12 +673,18 @@ function renderNotifsSection() {
     </div>
   `).join('');
 
-  document.getElementById('clearNotifsBtn').addEventListener('click', () => {
-    allNotifs = [];
-    renderNotifsSection();
-    renderRecentNotifs();
-    updateSidebarBadges();
-  });
+  // Clone to remove duplicate listeners
+  const clearBtn = document.getElementById('clearNotifsBtn');
+  if (clearBtn) {
+    const newBtn = clearBtn.cloneNode(true);
+    clearBtn.replaceWith(newBtn);
+    newBtn.addEventListener('click', () => {
+      allNotifs = [];
+      renderNotifsSection();
+      renderRecentNotifs();
+      updateSidebarBadges();
+    });
+  }
 }
 
 // ─────────────────────────────
@@ -629,8 +692,8 @@ function renderNotifsSection() {
 // ─────────────────────────────
 function updateSidebarBadges() {
   document.getElementById('sidebarTripCount').textContent = allTrips.length;
-  const notifBadge  = document.getElementById('sidebarNotifCount');
-  const notifCount  = allNotifs.filter(n => n.type === 'success' || n.type === 'warn').length;
+  const notifBadge = document.getElementById('sidebarNotifCount');
+  const notifCount = allNotifs.filter(n => n.type === 'success' || n.type === 'warn').length;
   if (notifCount > 0) { notifBadge.textContent = notifCount; notifBadge.style.display = 'inline-flex'; }
   else notifBadge.style.display = 'none';
 }
@@ -649,7 +712,6 @@ function initTripMap() {
   setupLocationSearch('startSearchInput', 'startSuggestions', 'start');
   setupLocationSearch('endSearchInput',   'endSuggestions',   'end');
 }
-
 
 // ─────────────────────────────
 // USE MY LOCATION BUTTON
@@ -673,13 +735,11 @@ function useMyLocation() {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
 
-      // Place marker on map
       if (startMarker) tripMap.removeLayer(startMarker);
       startMarker = L.marker([lat, lng], { icon: createMarkerIcon('green') })
         .addTo(tripMap).bindPopup('Your location').openPopup();
       startLatLng = { lat, lng };
 
-      // Reverse geocode to get a readable name
       try {
         const res  = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en`
@@ -711,7 +771,6 @@ function useMyLocation() {
     { enableHighAccuracy: true, timeout: 10000 }
   );
 }
-
 
 function setupLocationSearch(inputId, suggestionsId, role) {
   const input       = document.getElementById(inputId);
@@ -899,6 +958,8 @@ async function submitTrip() {
         startLocation: startLoc, endLocation: endLoc,
         startLat: startLatLng.lat, startLng: startLatLng.lng,
         endLat:   endLatLng.lat,   endLng:   endLatLng.lng,
+        fromName: document.getElementById('startSearchInput').value || startLoc,
+        toName:   document.getElementById('endSearchInput').value   || endLoc,
         notes,
       })
     });

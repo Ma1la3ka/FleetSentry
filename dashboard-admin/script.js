@@ -12,6 +12,7 @@ let notifications = [];
 let allDrivers    = [];
 let allTrips      = [];
 let allAlerts     = [];
+let dashboardRefreshInterval = null;
 
 // ─────────────────────────────
 // TOKEN HELPER
@@ -20,6 +21,20 @@ function getToken() {
   const user = JSON.parse(localStorage.getItem('fs_user'));
   return user.userId || user.user_id || localStorage.getItem('fs_token');
 }
+
+// ─────────────────────────────
+// BFCACHE AUTH CHECK
+// Prevents forward-navigation restoring dashboard after logout
+// ─────────────────────────────
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) {
+    const user = localStorage.getItem('fs_user');
+    const role = localStorage.getItem('fs_role');
+    if (!user || role !== 'admin') {
+      window.location.replace('/Login/index.html');
+    }
+  }
+});
 
 // ─────────────────────────────
 // INIT
@@ -32,6 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
   setupModal();
   setupMobileMenu();
   loadDashboardData();
+
+  // Auto-refresh every 30 seconds
+  dashboardRefreshInterval = setInterval(() => {
+    loadDashboardData();
+  }, 30000);
 });
 
 function loadUserFromStorage() {
@@ -39,7 +59,7 @@ function loadUserFromStorage() {
   const role   = localStorage.getItem('fs_role');
 
   if (!stored || role !== 'admin') {
-    window.location.href = '/Login/index.html';
+    window.location.replace('/Login/index.html');
     return;
   }
 
@@ -97,26 +117,29 @@ function setupNavigation() {
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
     Swal.fire({
-        title: 'Logout?',
-        text: 'Are you sure you want to logout?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, logout',
-        cancelButtonText: 'Cancel',
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#6b7280',
+      title: 'Logout?',
+      text: 'Are you sure you want to logout?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, logout',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
     }).then((result) => {
-        if (result.isConfirmed) {
-            localStorage.clear();
-            window.location.href = '/Login/index.html';
-        }
+      if (result.isConfirmed) {
+        // Stop all intervals before clearing storage
+        if (dashboardRefreshInterval) clearInterval(dashboardRefreshInterval);
+        if (liveMapInterval) clearInterval(liveMapInterval);
+        localStorage.clear();
+        window.location.replace('/Login/index.html');
+      }
     });
-});
+  });
 
   document.getElementById('refreshBtn').addEventListener('click', loadDashboardData);
 }
+
 function navigateTo(sectionId) {
-  // ADD THESE 4 LINES:
   if (sectionId !== 'map' && liveMapInterval) {
     clearInterval(liveMapInterval);
     liveMapInterval = null;
@@ -134,6 +157,7 @@ function navigateTo(sectionId) {
   if (sectionId === 'map' && !liveMap) initLiveMap();
   document.getElementById('sidebar').classList.remove('open');
 }
+
 // ─────────────────────────────
 // MOBILE MENU
 // ─────────────────────────────
@@ -227,6 +251,9 @@ async function loadDashboardData() {
     renderAlertsSection();
     updateSidebarBadges();
 
+    // If the live map is open, refresh markers too
+    if (liveMap) renderLiveMarkers();
+
   } catch (err) {
     console.error('Dashboard load error:', err);
     addNotification('danger', `Failed to load dashboard: ${err.message}`);
@@ -286,7 +313,7 @@ function renderTripRequests() {
       <div class="trip-avatar">${trip.driverName.split(' ').map(n => n[0]).join('')}</div>
       <div class="trip-info">
         <div class="trip-driver">${trip.driverName}</div>
-        <div class="trip-route">${trip.from} → ${trip.to}</div>
+        <div class="trip-route">${trip.fromName || trip.from} → ${trip.toName || trip.to}</div>
       </div>
       <div class="trip-actions">
         <button class="trip-btn reject"  onclick="quickAction('${trip.id}','rejected')">✕</button>
@@ -415,8 +442,8 @@ function renderTripsTable(filter = 'all') {
   tbody.innerHTML = rows.map(t => `
     <tr>
       <td><strong style="font-size:.82rem;">${t.driverName}</strong></td>
-      <td style="font-size:.78rem;">${t.from}</td>
-      <td style="font-size:.78rem;">${t.to}</td>
+      <td style="font-size:.78rem;">${t.fromName || t.from}</td>
+      <td style="font-size:.78rem;">${t.toName   || t.to}</td>
       <td>${t.vehicleType || '—'}</td>
       <td style="color:var(--muted);font-size:.76rem;">${t.requestedAt}</td>
       <td><span class="badge badge-${t.status}">${capitalise(t.status)}</span></td>
@@ -458,7 +485,7 @@ function renderFuelTable(stats) {
     return `
       <tr>
         <td><strong style="font-size:.82rem;">${t.driverName}</strong></td>
-        <td style="font-size:.76rem;">${t.from} → ${t.to}</td>
+        <td style="font-size:.76rem;">${t.fromName || t.from} → ${t.toName || t.to}</td>
         <td>${t.distanceKm || 0} km</td>
         <td>${litres} L</td>
         <td>₦${(t.fuelCost || 0).toLocaleString()}</td>
@@ -482,6 +509,18 @@ function renderAlertsSection() {
         <p>No alerts at the moment</p>
         <span>Your fleet is operating normally</span>
       </div>`;
+
+    // Re-attach clear button listener safely
+    const clearBtn = document.getElementById('clearAlertsBtn');
+    if (clearBtn) {
+      clearBtn.replaceWith(clearBtn.cloneNode(true));
+      document.getElementById('clearAlertsBtn').addEventListener('click', () => {
+        allAlerts = [];
+        renderAlertsSection();
+        renderAlerts();
+        updateSidebarBadges();
+      });
+    }
     return;
   }
 
@@ -502,12 +541,18 @@ function renderAlertsSection() {
     </div>
   `).join('');
 
-  document.getElementById('clearAlertsBtn').addEventListener('click', () => {
-    allAlerts = [];
-    renderAlertsSection();
-    renderAlerts();
-    updateSidebarBadges();
-  });
+  // Clone to remove any duplicate listeners before re-attaching
+  const clearBtn = document.getElementById('clearAlertsBtn');
+  if (clearBtn) {
+    const newBtn = clearBtn.cloneNode(true);
+    clearBtn.replaceWith(newBtn);
+    newBtn.addEventListener('click', () => {
+      allAlerts = [];
+      renderAlertsSection();
+      renderAlerts();
+      updateSidebarBadges();
+    });
+  }
 }
 
 // ─────────────────────────────
@@ -523,10 +568,9 @@ function updateSidebarBadges() {
 }
 
 // ─────────────────────────────
-// ─────────────────────────────
 // LIVE MAP
 // ─────────────────────────────
-let liveMarkers = {};
+let liveMarkers    = {};
 let liveMapInterval = null;
 
 function initLiveMap() {
@@ -544,6 +588,7 @@ function initLiveMap() {
     renderLiveMarkers();
   }, 15000);
 }
+
 function renderLiveMarkers() {
   const driverListEl = document.getElementById('mapDriverList');
   driverListEl.innerHTML = '';
@@ -573,7 +618,6 @@ function renderLiveMarkers() {
     const lat = parseFloat(trip.currentLat);
     const lng = parseFloat(trip.currentLng);
 
-    // ── IDLE CHECK: yellow if no location update in last 5 minutes ──
     const lastUpdate  = trip.locationUpdatedAt ? new Date(trip.locationUpdatedAt).getTime() : null;
     const minsAgo     = lastUpdate ? (now - lastUpdate) / 60000 : 999;
     const isIdle      = minsAgo > 5;
@@ -626,6 +670,7 @@ function renderLiveMarkers() {
     liveMap.setView([parseFloat(activeTrips[0].currentLat), parseFloat(activeTrips[0].currentLng)], 13);
   }
 }
+
 // ─────────────────────────────
 // TRIP MODAL
 // ─────────────────────────────
@@ -649,8 +694,8 @@ function openTripModal(tripId) {
 
   document.getElementById('modalDriver').textContent   = trip.driverName;
   document.getElementById('modalVehicle').textContent  = `${trip.vehicleType} — ${trip.plateNo}`;
-  document.getElementById('modalFrom').textContent     = trip.from;
-  document.getElementById('modalTo').textContent       = trip.to;
+  document.getElementById('modalFrom').textContent = trip.fromName || trip.from;
+  document.getElementById('modalTo').textContent   = trip.toName   || trip.to;
   document.getElementById('modalDistance').textContent = `${trip.distanceKm} km`;
   document.getElementById('modalFuelCost').textContent = `₦${(trip.fuelCost || 0).toLocaleString()}`;
 
